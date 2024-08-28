@@ -7,9 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-
     <style>
-         body {
+        body {
             background-color: #f8f9fa;
             color: #343a40;
             display: flex;
@@ -106,8 +105,7 @@
         }
     </style>
 </head>
-
-    <body>
+<body>
     <div class="container mt-5">
         <h1 class="text-center mb-4" style="color: #00274d;">Calculadora VLSM</h1>
         <div class="row mt-4">
@@ -145,237 +143,196 @@
             <a href="https://wa.me/tu_numero_telefono" target="_blank"><i class="fab fa-whatsapp"></i></a>
         </div>
     </footer>
-    
-        
-    <body>
-        <div class="container mt-5">
-            <h1 class="text-center mb-4" style="color: #00274d;">Calculadora VLSM</h1>
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <div class="form-group mb-3">
-                        <input type="text" class="form-control" id="network" placeholder=" ">
-                        <label for="network" class="form-label">Red Base (por ejemplo, 192.168.0.0/24)</label>
-                    </div>
-                    <div class="form-group mb-3">
-                        <input type="number" class="form-control" id="subnetCount" placeholder=" ">
-                        <label for="subnetCount" class="form-label">Cantidad de Subredes</label>
-                    </div>
-                    <button class="btn btn-primary" onclick="generateSubnets()">Generar Subredes</button>
+
+    <script>
+   function generateSubnets() {
+    const subnetCount = document.getElementById('subnetCount').value;
+    const subnetsContainer = document.getElementById('subnets');
+    subnetsContainer.innerHTML = '';
+
+    for (let i = 0; i < subnetCount; i++) {
+        subnetsContainer.innerHTML += `
+            <div class="col-lg-3 col-md-4 col-sm-6 subnet-col mb-3">
+                <div class="form-group">
+                    <input type="text" class="form-control mb-2" id="subnetName${i}" placeholder=" ">
+                    <label for="subnetName${i}" class="form-label">Nombre de la Subred ${i+1}</label>
+                </div>
+                <div class="form-group">
+                    <input type="number" class="form-control" id="hostCount${i}" placeholder=" " min="1">
+                    <label for="hostCount${i}" class="form-label">Cantidad de Equipos</label>
                 </div>
             </div>
-            <div class="row mt-4" id="subnetsContainer" style="display:none;">
-                <h3 class="mb-3" style="color: #00274d;">Subredes</h3>
-                <div id="subnets" class="row"></div>
-                <button class="btn btn-success mt-3" onclick="calculateVLSM()">Calcular VLSM</button>
-            </div>
-            <div class="row mt-4">
-                <h3 class="mb-3" style="color: #00274d;">Resultado VLSM</h3>
-                <button class="btn btn-info mt-3" onclick="exportToExcel()">Exportar a Excel <br></button>
-                <div id="vlsmTable" class="table-responsive"></div>
-            </div>
-           
-        </div>
-    
-        <footer>
-            <p>Si deseas implementar un sistema similar, puedes ver el código fuente en GitHub y seguirnos en nuestras redes sociales.</p>
-            <div>
-                <a href="https://github.com/tu_usuario" target="_blank"><i class="fab fa-github"></i></a>
-                <a href="https://www.instagram.com/tu_usuario" target="_blank"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.facebook.com/tu_usuario" target="_blank"><i class="fab fa-facebook"></i></a>
-                <a href="https://wa.me/tu_numero_telefono" target="_blank"><i class="fab fa-whatsapp"></i></a>
-            </div>
-        </footer>
-    
-        <script>
-       function generateSubnets() {
-        const subnetCount = document.getElementById('subnetCount').value;
-        const subnetsContainer = document.getElementById('subnets');
-        subnetsContainer.innerHTML = '';
-    
-        for (let i = 0; i < subnetCount; i++) {
-            subnetsContainer.innerHTML += `
-                <div class="col-lg-3 col-md-4 col-sm-6 subnet-col mb-3">
-                    <div class="form-group">
-                        <input type="text" class="form-control mb-2" id="subnetName${i}" placeholder=" ">
-                        <label for="subnetName${i}" class="form-label">Nombre de la Subred ${i+1}</label>
-                    </div>
-                    <div class="form-group">
-                        <input type="number" class="form-control" id="hostCount${i}" placeholder=" " min="1">
-                        <label for="hostCount${i}" class="form-label">Cantidad de Equipos</label>
-                    </div>
-                </div>
-            `;
-        }
-    
-        document.getElementById('subnetsContainer').style.display = 'block';
-    }
-    
-    function calculateVLSM() {
-        const network = document.getElementById('network').value.trim();
-        const subnetCount = document.getElementById('subnetCount').value;
-        const vlsmTable = document.getElementById('vlsmTable');
-        const classDisplay = document.getElementById('classDisplay');
-        vlsmTable.innerHTML = '';
-    
-        let subnetsData = [];
-    
-        // Obtener las subredes y la cantidad de hosts
-        for (let i = 0; i < subnetCount; i++) {
-            const subnetName = document.getElementById(`subnetName${i}`).value;
-            const hostCount = document.getElementById(`hostCount${i}`).value;
-    
-            subnetsData.push({ name: subnetName, hosts: parseInt(hostCount) });
-        }
-    
-        // Ordenar las subredes por la cantidad de hosts de mayor a menor
-        subnetsData.sort((a, b) => b.hosts - a.hosts);
-    
-        // Validar si la red tiene prefijo
-        if (!network.includes('/')) {
-            alert('Por favor ingrese un prefijo válido en la red base, por ejemplo: 10.10.0.0/24');
-            return;
-        }
-    
-        let baseNetwork = network.split('/')[0];
-        let basePrefix = parseInt(network.split('/')[1]);
-    
-        if (isNaN(basePrefix) || basePrefix < 1 || basePrefix > 32) {
-            alert('Por favor ingrese un prefijo válido entre 1 y 32.');
-            return;
-        }
-    
-        // Determinar la clase de la red
-        let firstOctet = parseInt(baseNetwork.split('.')[0]);
-        let networkClass = '';
-        
-        if (firstOctet >= 1 && firstOctet <= 126) {
-            networkClass = 'Clase A';
-        } else if (firstOctet >= 128 && firstOctet <= 191) {
-            networkClass = 'Clase B';
-        } else if (firstOctet >= 192 && firstOctet <= 223) {
-            networkClass = 'Clase C';
-        } else {
-            networkClass = 'Clase Desconocida';
-        }
-    
-        // Actualizar o agregar el texto de la clase de red
-        if (classDisplay) {
-            classDisplay.textContent = `Tipo de Clase de Red: ${networkClass}`;
-        } else {
-            const newClassDisplay = document.createElement('h3');
-            newClassDisplay.id = 'classDisplay';
-            newClassDisplay.textContent = `Tipo de Clase de Red: ${networkClass}`;
-            vlsmTable.parentElement.insertBefore(newClassDisplay, vlsmTable);
-        }
-    
-        // Convertir la IP base a un número entero
-        function ipToInt(ip) {
-            return ip.split('.').reduce((int, octet) => (int << 8) + parseInt(octet, 10), 0);
-        }
-    
-        // Convertir un número entero a una IP
-        function intToIp(int) {
-            return [(int >>> 24), (int >> 16 & 255), (int >> 8 & 255), (int & 255)].join('.');
-        }
-    
-        // Función para calcular la máscara de subred en formato decimal
-        function calculateSubnetMask(prefixLength) {
-            return ((-1 << (32 - prefixLength)) >>> 0)
-                .toString(2)
-                .match(/.{8}/g)
-                .map(bin => parseInt(bin, 2))
-                .join('.');
-        }
-    
-        // Construir la tabla VLSM
-        let currentNetwork = ipToInt(baseNetwork);
-    
-        vlsmTable.innerHTML = `
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Nombre Subred</th>
-                        <th>Subred</th>
-                        <th>P.D.V</th>
-                        <th>U.D.V</th>
-                        <th>Broadcast</th>
-                        <th>Prefijo</th>
-                        <th>Mascara de Red</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${subnetsData.map(subnet => {
-                        let requiredBits = Math.ceil(Math.log2(subnet.hosts + 2)); // +2 para red y broadcast
-                        let subnetPrefix = 32 - requiredBits;
-    
-                        if (subnetPrefix < 1) {
-                            alert(`La subred '${subnet.name}' requiere más hosts de los que son posibles con el rango de IP disponible.`);
-                            return '';
-                        }
-    
-                        let subnetMask = calculateSubnetMask(subnetPrefix);
-    
-                        let subnetAddress = currentNetwork;
-                        let pdv = subnetAddress + 1;
-                        let broadcast = subnetAddress + Math.pow(2, 32 - subnetPrefix) - 1;
-                        let udv = broadcast - 1;
-    
-                        let result = `
-                            <tr>
-                                <td>${subnet.name}</td>
-                                <td>${intToIp(subnetAddress)}/${subnetPrefix}</td>
-                                <td>${intToIp(pdv)}</td>
-                                <td>${intToIp(udv)}</td>
-                                <td>${intToIp(broadcast)}</td>
-                                <td>/${subnetPrefix}</td>
-                                <td>${subnetMask}</td>
-                            </tr>
-                        `;
-    
-                        // Preparar la siguiente subred
-                        currentNetwork = broadcast + 1;
-    
-                        return result;
-                    }).join('')}
-                </tbody>
-            </table>
         `;
     }
-    
-    function exportToExcel() {
-        /* Get the HTML data */
-        var data = [];
-        var headers = [];
-        var table = document.querySelector('table');
-        var rows = table.querySelectorAll('tr');
-    
-        // Get the headers
-        var headerCells = rows[0].querySelectorAll('th');
-        for (var i = 0; i < headerCells.length; i++) {
-            headers.push(headerCells[i].innerText);
-        }
-        data.push(headers);
-    
-        // Get the data rows
-        for (var i = 1; i < rows.length; i++) {
-            var rowData = [];
-            var cells = rows[i].querySelectorAll('td');
-            for (var j = 0; j < cells.length; j++) {
-                rowData.push(cells[j].innerText);
-            }
-            data.push(rowData);
-        }
-    
-        /* Create a workbook */
-        var wb = XLSX.utils.book_new();
-        var ws = XLSX.utils.aoa_to_sheet(data);
-        XLSX.utils.book_append_sheet(wb, ws, "VLSM Resultados");
-    
-        /* Export to file (xlsx) */
-        XLSX.writeFile(wb, "VLSM_Resultados.xlsx");
+
+    document.getElementById('subnetsContainer').style.display = 'block';
+}
+
+function calculateVLSM() {
+    const network = document.getElementById('network').value.trim();
+    const subnetCount = document.getElementById('subnetCount').value;
+    const vlsmTable = document.getElementById('vlsmTable');
+    const classDisplay = document.getElementById('classDisplay');
+    vlsmTable.innerHTML = '';
+
+    let subnetsData = [];
+
+    // Obtener las subredes y la cantidad de hosts
+    for (let i = 0; i < subnetCount; i++) {
+        const subnetName = document.getElementById(`subnetName${i}`).value;
+        const hostCount = document.getElementById(`hostCount${i}`).value;
+
+        subnetsData.push({ name: subnetName, hosts: parseInt(hostCount) });
     }
+
+    // Ordenar las subredes por la cantidad de hosts de mayor a menor
+    subnetsData.sort((a, b) => b.hosts - a.hosts);
+
+    // Validar si la red tiene prefijo
+    if (!network.includes('/')) {
+        alert('Por favor ingrese un prefijo válido en la red base, por ejemplo: 10.10.0.0/24');
+        return;
+    }
+
+    let baseNetwork = network.split('/')[0];
+    let basePrefix = parseInt(network.split('/')[1]);
+
+    if (isNaN(basePrefix) || basePrefix < 1 || basePrefix > 32) {
+        alert('Por favor ingrese un prefijo válido entre 1 y 32.');
+        return;
+    }
+
+    // Determinar la clase de la red
+    let firstOctet = parseInt(baseNetwork.split('.')[0]);
+    let networkClass = '';
     
-        </script>
-    </body>
-    </html>
-    
+    if (firstOctet >= 1 && firstOctet <= 126) {
+        networkClass = 'Clase A';
+    } else if (firstOctet >= 128 && firstOctet <= 191) {
+        networkClass = 'Clase B';
+    } else if (firstOctet >= 192 && firstOctet <= 223) {
+        networkClass = 'Clase C';
+    } else {
+        networkClass = 'Clase Desconocida';
+    }
+
+    // Actualizar o agregar el texto de la clase de red
+    if (classDisplay) {
+        classDisplay.textContent = `Tipo de Clase de Red: ${networkClass}`;
+    } else {
+        const newClassDisplay = document.createElement('h3');
+        newClassDisplay.id = 'classDisplay';
+        newClassDisplay.textContent = `Tipo de Clase de Red: ${networkClass}`;
+        vlsmTable.parentElement.insertBefore(newClassDisplay, vlsmTable);
+    }
+
+    // Convertir la IP base a un número entero
+    function ipToInt(ip) {
+        return ip.split('.').reduce((int, octet) => (int << 8) + parseInt(octet, 10), 0);
+    }
+
+    // Convertir un número entero a una IP
+    function intToIp(int) {
+        return [(int >>> 24), (int >> 16 & 255), (int >> 8 & 255), (int & 255)].join('.');
+    }
+
+    // Función para calcular la máscara de subred en formato decimal
+    function calculateSubnetMask(prefixLength) {
+        return ((-1 << (32 - prefixLength)) >>> 0)
+            .toString(2)
+            .match(/.{8}/g)
+            .map(bin => parseInt(bin, 2))
+            .join('.');
+    }
+
+    // Construir la tabla VLSM
+    let currentNetwork = ipToInt(baseNetwork);
+
+    vlsmTable.innerHTML = `
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nombre Subred</th>
+                    <th>Subred</th>
+                    <th>P.D.V</th>
+                    <th>U.D.V</th>
+                    <th>Broadcast</th>
+                    <th>Prefijo</th>
+                    <th>Mascara de Red</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${subnetsData.map(subnet => {
+                    let requiredBits = Math.ceil(Math.log2(subnet.hosts + 2)); // +2 para red y broadcast
+                    let subnetPrefix = 32 - requiredBits;
+
+                    if (subnetPrefix < 1) {
+                        alert(`La subred '${subnet.name}' requiere más hosts de los que son posibles con el rango de IP disponible.`);
+                        return '';
+                    }
+
+                    let subnetMask = calculateSubnetMask(subnetPrefix);
+
+                    let subnetAddress = currentNetwork;
+                    let pdv = subnetAddress + 1;
+                    let broadcast = subnetAddress + Math.pow(2, 32 - subnetPrefix) - 1;
+                    let udv = broadcast - 1;
+
+                    let result = `
+                        <tr>
+                            <td>${subnet.name}</td>
+                            <td>${intToIp(subnetAddress)}/${subnetPrefix}</td>
+                            <td>${intToIp(pdv)}</td>
+                            <td>${intToIp(udv)}</td>
+                            <td>${intToIp(broadcast)}</td>
+                            <td>/${subnetPrefix}</td>
+                            <td>${subnetMask}</td>
+                        </tr>
+                    `;
+
+                    // Preparar la siguiente subred
+                    currentNetwork = broadcast + 1;
+
+                    return result;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function exportToExcel() {
+    /* Get the HTML data */
+    var data = [];
+    var headers = [];
+    var table = document.querySelector('table');
+    var rows = table.querySelectorAll('tr');
+
+    // Get the headers
+    var headerCells = rows[0].querySelectorAll('th');
+    for (var i = 0; i < headerCells.length; i++) {
+        headers.push(headerCells[i].innerText);
+    }
+    data.push(headers);
+
+    // Get the data rows
+    for (var i = 1; i < rows.length; i++) {
+        var rowData = [];
+        var cells = rows[i].querySelectorAll('td');
+        for (var j = 0; j < cells.length; j++) {
+            rowData.push(cells[j].innerText);
+        }
+        data.push(rowData);
+    }
+
+    /* Create a workbook */
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, "VLSM Resultados");
+
+    /* Export to file (xlsx) */
+    XLSX.writeFile(wb, "VLSM_Resultados.xlsx");
+}
+
+    </script>
+</body>
+</html>
